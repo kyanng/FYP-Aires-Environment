@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NETS QR Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <header class="site-header">
+        <div class="header-inner">
+            <div class="logo">
+                <span class="logo-icon">&#9632;</span>
+                <span class="logo-text">NETS</span>
+            </div>
+            <span class="header-subtitle">QR Payment Generator</span>
+        </div>
+    </header>
+
+    <main class="main-content">
+
+        <section class="card form-card">
+            <h2 class="card-title">Generate QR Code</h2>
+            <p class="card-description">Enter the payment details below to generate a NETS Dynamic QR code.</p>
+
+            <form method="POST" id="qrForm" autocomplete="off">
+                <div class="field-group">
+                    <label class="field-label" for="amount">Amount (SGD)</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">$</span>
+                        <input
+                            class="field-input"
+                            type="text"
+                            id="amount"
+                            name="amount"
+                            placeholder="e.g. 10.00  (default: 1.00)"
+                            pattern="^\d+(\.\d{1,2})?$"
+                            title="Enter a valid dollar amount"
+                        >
+                    </div>
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label" for="stan">
+                        STAN
+                        <span class="field-hint">6-digit transaction number</span>
+                    </label>
+                    <input
+                        class="field-input"
+                        type="text"
+                        id="stan"
+                        name="stan"
+                        placeholder="Leave blank for a random STAN"
+                        maxlength="6"
+                        pattern="\d{6}"
+                        title="STAN must be exactly 6 digits"
+                    >
+                </div>
+
+                <button class="btn-generate" type="submit" id="submitBtn">
+                    <span class="btn-label">Generate QR Code</span>
+                    <span class="btn-spinner" id="spinner" hidden>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                        </svg>
+                        Generating…
+                    </span>
+                </button>
+            </form>
+        </section>
+
+        {% if qr %}
+        <section class="card result-card">
+            <div class="result-header">
+                <span class="result-badge success">Payment Ready</span>
+                <h2 class="card-title">Scan to Pay</h2>
+            </div>
+
+            <div class="qr-wrapper">
+                <img class="qr-image" src="data:image/png;base64,{{ qr }}" alt="NETS QR Code">
+            </div>
+
+            <dl class="meta-list">
+                <div class="meta-row">
+                    <dt>Amount</dt>
+                    <dd><strong>SGD {{ display_amount }}</strong></dd>
+                </div>
+                <div class="meta-row">
+                    <dt>STAN</dt>
+                    <dd>{{ stan }}</dd>
+                </div>
+                <div class="meta-row">
+                    <dt>Transaction ID</dt>
+                    <dd class="mono">{{ txn_identifier }}</dd>
+                </div>
+            </dl>
+        </section>
+        {% endif %}
+
+        {% if error %}
+        <section class="card error-card">
+            <div class="error-header">
+                <span class="result-badge error">Error</span>
+                <h2 class="card-title">Request Failed</h2>
+            </div>
+            <pre class="error-body">{{ error }}</pre>
+        </section>
+        {% endif %}
+
+    </main>
+
+    <footer class="site-footer">
+        <p>NETS UAT Environment &mdash; Development use only</p>
+    </footer>
+
+    <script>
+        document.getElementById('qrForm').addEventListener('submit', function () {
+            const btn = document.getElementById('submitBtn');
+            const label = btn.querySelector('.btn-label');
+            const spinner = document.getElementById('spinner');
+            label.hidden = true;
+            spinner.hidden = false;
+            btn.disabled = true;
+        });
+    </script>
+
+</body>
+</html>

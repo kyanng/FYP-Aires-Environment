@@ -1,6 +1,6 @@
 import hashlib, base64, json, random
 from datetime import datetime
-from flask import Flask, request, render_template_string
+from flask import Flask, request, render_template
 import urllib.request, urllib.error
 
 app = Flask(__name__)
@@ -13,47 +13,6 @@ SECRET_KEY = "16c573bf-0721-478a-8635-38e53e3badf1"
 HOST_TID = "37066801"
 HOST_MID = "11137066800"
 
-HTML = """
-<!DOCTYPE html>
-<html>
-<head>
-    <title>NETS QR Generator</title>
-    <style>
-        body { font-family: Arial; max-width: 600px; margin: 40px auto; }
-        input, button { padding: 10px; width: 100%; margin: 8px 0; }
-        button { background: #111; color: white; border: none; cursor: pointer; }
-        img { max-width: 300px; margin-top: 20px; }
-        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
-    </style>
-</head>
-<body>
-    <h2>NETS QR Generator</h2>
-
-    <form method="POST">
-        <label>Amount SGD</label>
-        <input name="amount" placeholder="Default: 100">
-
-        <label>STAN</label>
-        <input name="stan" placeholder="Default: random 6 digits">
-
-        <button type="submit">Generate QR</button>
-    </form>
-
-    {% if qr %}
-        <h3>QR Generated Successfully</h3>
-        <img src="data:image/png;base64,{{ qr }}">
-        <p><b>STAN:</b> {{ stan }}</p>
-        <p><b>Amount:</b> SGD {{ display_amount }}</p>
-        <p><b>Txn Identifier:</b> {{ txn_identifier }}</p>
-    {% endif %}
-
-    {% if error %}
-        <h3>Error</h3>
-        <pre>{{ error }}</pre>
-    {% endif %}
-</body>
-</html>
-"""
 
 def format_amount(amount_input):
     if not amount_input:
@@ -67,7 +26,7 @@ def format_amount(amount_input):
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "GET":
-        return render_template_string(HTML)
+        return render_template('index.html')
 
     try:
         amount_raw = request.form.get("amount", "").strip()
@@ -147,21 +106,21 @@ def index():
         result = json.loads(response_text)
 
         if result.get("response_code") == "00" and result.get("qr_code"):
-            return render_template_string(
-                HTML,
+            return render_template(
+                'index.html',
                 qr=result["qr_code"],
                 stan=stan,
                 display_amount=display_amount,
                 txn_identifier=result.get("txn_identifier")
             )
 
-        return render_template_string(
-            HTML,
+        return render_template(
+            'index.html',
             error=json.dumps(result, indent=2)
         )
 
     except Exception as e:
-        return render_template_string(HTML, error=str(e))
+        return render_template('index.html', error=str(e))
 
 if __name__ == "__main__":
         app.run(debug=True, host="127.0.0.1", port=9999)
