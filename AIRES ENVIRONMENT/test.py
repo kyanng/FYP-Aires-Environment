@@ -38,7 +38,7 @@ def generate_ecoqpay_qr(link1, link2="", link3=""):
 
     payload = {
         "link1": link1,
-        "link2": link2,
+        "link2": "",
         "link3": link3,
         "encryption-key": encryption_key
     }
@@ -388,7 +388,7 @@ def index():
             qr_id = stan + random_suffix
 
             generated_at = datetime.now()
-            expires_at = generated_at + timedelta(minutes=1)
+            expires_at = generated_at + timedelta(minutes=10)
 
             invoice_sig = sign_invoice(
                 qr_id,
