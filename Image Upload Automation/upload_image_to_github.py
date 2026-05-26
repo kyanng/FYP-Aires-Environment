@@ -1,5 +1,6 @@
 import base64
 import os
+import subprocess
 import sys
 
 import requests
@@ -20,7 +21,7 @@ GITHUB_TOKEN    = os.getenv("GITHUB_TOKEN")
 ECOQPAY_API_KEY = os.getenv("ECOQPAY_API_KEY")
 
 GITHUB_USERNAME      = "kyanng"
-GITHUB_REPO          = "AIRES-ENVIRONMENT"
+GITHUB_REPO          = "FYP-AIRES-ENVIRONMENT"
 GITHUB_UPLOAD_FOLDER = "uploaded_images"
 GITHUB_BRANCH        = "main"
 
@@ -141,14 +142,44 @@ def validate_config(require_ecoqpay: bool = True) -> None:
 
 def _save_local_copy(image_bytes: bytes, filename: str) -> str:
     """
-    Save *image_bytes* to the local uploaded_images folder.
+    Save *image_bytes* to the local uploaded_images folder, then
+    auto-commit and push the file so the local git repo stays in sync.
 
     Returns the absolute path of the saved file.
     """
     local_dest = os.path.join(LOCAL_UPLOAD_FOLDER, filename)
     with open(local_dest, "wb") as fh:
         fh.write(image_bytes)
-    return os.path.abspath(local_dest)
+    abs_path = os.path.abspath(local_dest)
+
+    # Resolve the repo root (two levels up from this script)
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+    try:
+        # Pull first so we don't diverge from the remote commits made by the API
+        subprocess.run(
+            ["git", "pull", "--rebase", "--autostash"],
+            cwd=repo_root, check=True, capture_output=True, text=True,
+        )
+        subprocess.run(
+            ["git", "add", abs_path],
+            cwd=repo_root, check=True, capture_output=True, text=True,
+        )
+        subprocess.run(
+            ["git", "commit", "-m", f"Auto-upload: {filename}"],
+            cwd=repo_root, check=True, capture_output=True, text=True,
+        )
+        subprocess.run(
+            ["git", "push"],
+            cwd=repo_root, check=True, capture_output=True, text=True,
+        )
+        print(f"Git: committed and pushed  →  uploaded_images/{filename}")
+    except subprocess.CalledProcessError as exc:
+        # Non-fatal — the GitHub API upload still succeeds even if git fails
+        stderr = exc.stderr.strip() if exc.stderr else ""
+        print(f"Git auto-commit skipped: {stderr or exc}")
+
+    return abs_path
 
 
 def _upload_bytes_to_github(image_bytes: bytes, safe_filename: str) -> str:
